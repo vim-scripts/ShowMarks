@@ -3,10 +3,13 @@
 " Description: Visually displays the location of marks local to a buffer.
 " Authors:     Anthony Kruize <trandor@labyrinth.net.au>
 "              Michael Geddes <michaelrgeddes@optushome.com.au>
-" Version:     1.1
-" Modified:    6 February 2002
+" Version:     1.2
+" Modified:    28 February 2002
 " License:     Released into the public domain.
-" ChangeLog:   1.1 - Added support for the A-Z marks.
+" ChangeLog:   1.2 - Added a check that Vim was compiled with +signs support.
+"                    Added the ability to define which marks are shown.
+"                    Removed debugging code I accidently left in.
+"              1.1 - Added support for the A-Z marks.
 "                    Fixed sign staying placed if the line it was on is deleted.
 "                    Clear autocommands before making new ones.
 "              1.0 - First release.
@@ -19,7 +22,6 @@
 "
 "              Hiding a mark doesn't actually remove it, it simply moves it to
 "              line 1 and hides it visually.
-"
 " ==============================================================================
 
 " Check if we should continue loading
@@ -28,22 +30,45 @@ if exists( "loaded_showmarks" )
 endif
 let loaded_showmarks = 1
 
+" Bail out if VIM isn't compiled with signs support.
+if has("signs") == 0
+	echohl ErrorMsg
+	echo "ShowMarks requires Vim to have +signs support."
+	echohl None
+	finish
+endif
+
+
+
+" -- CONFIGURATION --
+" Add the following line to your vimrc and change the letters to
+" the marks you want shown.
+" The example will only show marks a,b,c,d,m,t,u, and A,B,C,D,E,
+" Example:
+"    let showmarks_include = "a-dmtuA-E"
+
+" If the 'showmarks_include' variable isn't defined in the users vimrc,
+" then show all marks by default.
+if !exists('g:showmarks_include')
+	let g:showmarks_include = "a-zA-Z"
+endif
+
+
+
 " Mappings
 if !hasmapto( '<Plug>ShowmarksShowMarksToggle' )
-	map <unique> <leader>mt <Plug>ShowmarksShowMarksToggle
+	map <silent> <unique> <leader>mt <Plug>ShowmarksShowMarksToggle
 endif
 if !hasmapto( '<Plug>ShowmarksHideMark' )
-	map <unique> <leader>mh <Plug>ShowmarksHideMark
+	map <silent> <unique> <leader>mh <Plug>ShowmarksHideMark
 endif
 
 noremap <unique> <script> <Plug>ShowmarksShowMarksToggle :call <SID>ShowMarksToggle()<CR>
 noremap <unique> <script> <Plug>ShowmarksHideMark :call <SID>HideMark()<CR>
 noremap <unique> <script> \sm m
-noremap m :exe 'norm \sm'.nr2char(getchar())<bar>call <sid>ShowMarks()<CR>
+noremap <silent> m :exe 'norm \sm'.nr2char(getchar())<bar>call <sid>ShowMarks()<CR>
 
 " AutoCommands:
-" CursorHold checks the marks and set the signs
-" GuiEnter loads the default theme for graphical icons
 aug ShowMarks
 	au!
 	autocmd CursorHold * call s:ShowMarks()
@@ -119,20 +144,25 @@ fun! s:ShowMarks()
 		let C = nr2char(char2nr('A') + n)
 		let ID = id + 26
 		let LN = line("'".C)
-		if ln == 0 && (exists('b:placed_'.c) && b:placed_{c} != ln )
-			exe 'sign unplace '.id.' buffer='.winbufnr(0)
-		elseif ln != 0 && (!exists('b:placed_'.c) || b:placed_{c} != ln )
-			echo id
-			exe 'sign unplace '.id.' buffer='.winbufnr(0)
-			exe 'sign place '.id.' name=ShowMark'.c.' line='.ln.' buffer='.winbufnr(0)
+
+		if c =~ '^['.g:showmarks_include.']$'
+			if ln == 0 && (exists('b:placed_'.c) && b:placed_{c} != ln )
+				exe 'sign unplace '.id.' buffer='.winbufnr(0)
+			elseif ln != 0 && (!exists('b:placed_'.c) || b:placed_{c} != ln )
+				exe 'sign unplace '.id.' buffer='.winbufnr(0)
+				exe 'sign place '.id.' name=ShowMark'.c.' line='.ln.' buffer='.winbufnr(0)
+			endif
 		endif
-		if LN == 0 && (exists('b:placed_'.C) && b:placed_{C} != LN )
-			exe 'sign unplace '.ID.' buffer='.winbufnr(0)
-		elseif LN != 0 && (!exists('b:placed_'.C) || b:placed_{C} != LN )
-			echo ID
-			exe 'sign unplace '.ID.' buffer='.winbufnr(0)
-			exe 'sign place '.ID.' name=ShowMark'.C.' line='.LN.' buffer='.winbufnr(0)
+
+		if C =~ '^['.g:showmarks_include.']$'
+			if LN == 0 && (exists('b:placed_'.C) && b:placed_{C} != LN )
+				exe 'sign unplace '.ID.' buffer='.winbufnr(0)
+			elseif LN != 0 && (!exists('b:placed_'.C) || b:placed_{C} != LN )
+				exe 'sign unplace '.ID.' buffer='.winbufnr(0)
+				exe 'sign place '.ID.' name=ShowMark'.C.' line='.LN.' buffer='.winbufnr(0)
+			endif
 		endif
+
 		let b:placed_{c} = ln
 		let b:placed_{C} = LN
 		let n = n + 1

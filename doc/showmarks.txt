@@ -27,6 +27,7 @@ Note: This plugin requires Vim 6.x compiled with the |+signs| feature.
     3. Highlighting          |showmarks-highlighting|
     4. Key mappings          |showmarks-mappings|
     5. Commands              |showmarks-commands|
+    6. ChangeLog             |showmarks-changelog|
 
     Appendix
     A. Using marks           |marks|
@@ -51,26 +52,24 @@ behaves:
    ShowMarks can be turned back on using the |ShowMarksToggle| command.
 
                                                           *'showmarks_include'*
-'showmarks_include'     string  (default: "a-zA-Z")
-                        global
-   This option specifies which marks will be shown by ShowMarks.
-   The best way to show how this works is with some examples:
+'showmarks_include'     string  (default:
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.'`^<>[]{}()\"")
+                        global or local to buffer
+   This option specifies which marks will be shown and in which order if
+   placed on the same line. Marks earlier in the list take precedence over
+   marks later in the list.
+   This option can also be specified as a buffer option which will override
+   the global version.
+
+   NOTE: When including the " mark, it must be escaped with a \.
+
+   For example to only include marks 'abcdefzxABHJio', in that order:
 >
-     let g:showmarks_include="a-cmtuA-E"
+     let g:showmarks_include="abcdefzxABJio"
 <
-   This will tell ShowMarks to only show the marks a,b,c,m,t,u,A,B,C,D and E.
-   All other marks will still be there, just invisible.
-
-   To show all marks:
+   To override this for a particular buffer with 'ABCDhj.'^':
 >
-    let g:showmarks_include="][a-zA-Z0-9\"^'`<>(){}.")
-<
-   NOTE: When including the ] mark, it must be first in the list.
-         When including the " mark, it must be escaped with a \.
-
-   The list of available marks is: >
-
-     a-z A-Z 0-9 " ^ ' ` . < > ( ) { } [ ]
+     let b:showmarks_include="abcdefzxABJio"
 <
                                                       *'showmarks_ignore_type'*
 'showmarks_ignore_type' string  (default: "hq")
@@ -89,16 +88,6 @@ behaves:
      let g:showmarks_ignore_type="hpr"
 <
                                                       *'showmarks_ignore_name'*
-'showmarks_ignore_name' string  (default: "")
-                        global
-   This option defines specific names of buffers to be ignored.
-   Names should be separated by a space. This option is case-sensitive.
-
-   For example to ignore the TagList window:
->
-     let g:showmarks_ignore_name="__Tag_List__"
-<
-                                                        *'showmarks_textlower'*
 'showmarks_textlower'   string  (default: ">" )
                         global
    This option defines how the marks a-z will be displayed.
@@ -135,17 +124,18 @@ behaves:
 ===============================================================================
 3. Highlighting                                        *showmarks-highlighting*
 
-Three highlighting groups are used by ShowMarks to define the colours used to
+Four highlighting groups are used by ShowMarks to define the colours used to
 highlight each of the marks.
 
-  - ShowMarksHL  : This group is used to highlight all the lowercase marks.
+  - ShowMarksHLl : This group is used to highlight all the lowercase marks.
   - ShowMarksHLu : This group is used to highlight all the uppercase marks.
   - ShowMarksHLo : This group is used to highlight all other marks.
+  - ShowMarksHLm : This group is used when multiple marks are on the same line.
 
-You can define you own highlighting by overriding these groups in your |vimrc|.
+You can define your own highlighting by overriding these groups in your |vimrc|.
 For example: >
 
-  highlight ShowMarksHL guifg=red guibg=green
+  highlight ShowMarksHLl guifg=red guibg=green
 <
 Will set all lowercase marks to be red on green when running in GVim.
 See |highlight| for more information.
@@ -156,6 +146,7 @@ See |highlight| for more information.
 The following mappings are setup by default:
 
   <Leader>mt   - Toggles ShowMarks on and off.
+  <Leader>mo   - Forces ShowMarks on.
   <Leader>mh   - Clears the mark at the current line.
   <Leader>ma   - Clears all marks in the current buffer.
   <Leader>mm   - Places the next available mark on the current line.
@@ -168,6 +159,10 @@ The following mappings are setup by default:
                                                               *ShowMarksToggle*
 :ShowMarksToggle
    This command will toggle the display of marks on or off.
+
+
+:ShowMarksOn                                                      *ShowMarksOn*
+   This command will force the display of marks on.
 
                                                            *ShowMarksClearMark*
 :ShowMarksClearMark
@@ -187,5 +182,61 @@ The following mappings are setup by default:
    effectively automates mark placement so you don't have to remember which
    marks are placed or not. Hidden marks are considered to be available.
    NOTE: Only marks a-z are supported by this function.
+
+===============================================================================
+6. ChangeLog                                              *showmarks-changelog*
+
+2.1 - 2004-03-04
+   Added ShowMarksOn. It forces ShowMarks to be enabled whether it's on or not.
+     (Gary Holloway)
+   Marks now have a definable order of precedence for when mulitple alpha marks
+     have been placed on the same line. A new highlight group, ShowMarksHLm is
+     used to identify this situation. (Gary Holloway)
+       - showmarks_include has changed accordingly.
+       - ShowMarksHL is now ShowMarksHLl.
+   ShowMarksPlaceMark now places marks in the order specified by
+     showmarks_include. (Gary Holloway)
+   showmarks_include can now be specified per buffer. (Gary Holloway)
+
+2.0 - 2003-08-11
+   Added ability to ignore buffers by type.
+   Toggling ShowMarks off now works correctly when switching buffers.
+   ShowMarksHideMark and ShowMarksHideAll have been renamed to
+     ShowMarksClearMark and ShowMarksClearAll.
+   Marks a-z, A-Z and others now have different highlighting from each other.
+   Added support for all other marks. (Gary Holloway)
+   Enhanced customization of how marks are displayed by allowing a prefix to
+     be specified.(Gary Holloway & Anthony Kruize)
+   Fixed CursorHold autocmd triggering even when ShowMarks is disabled.
+     (Charles E. Campbell)
+
+1.5 - 2002-07-16
+   Added ability to customize how the marks are displayed.
+
+1.4 - 2002-05-29
+   Added support for placing the next available mark.
+     (Thanks to Shishir Ramam for the idea)
+   Added support for hiding all marks.
+   Marks on line 1 are no longer shown. This stops hidden marks from
+     reappearing when the file is opened again.
+   Added a help file.
+
+1.3 - 2002-05-20
+   Fixed toggling ShowMarks not responding immediately.
+   Added user commands for toggling/hiding marks.
+   Added ability to disable ShowMarks by default.
+
+1.2 - 2002-03-06
+   Added a check that Vim was compiled with +signs support.
+   Added the ability to define which marks are shown.
+   Removed debugging code I accidently left in.
+
+1.1 - 2002-02-05
+   Added support for the A-Z marks.
+   Fixed sign staying placed if the line it was on is deleted.
+   Clear autocommands before making new ones.
+
+1.0 - 2001-11-20
+   First release.
 
 vim:tw=78:ts=4:ft=help

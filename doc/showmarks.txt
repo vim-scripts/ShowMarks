@@ -1,0 +1,87 @@
+*ShowMarks.txt* Plugin for visually showing the location of marks
+
+               By Anthony Kruize <trandor@labyrinth.net.au>
+                  Michael Geddes <michaelrgeddes@optushome.com.au>
+
+
+ShowMarks provides a visual representation of |marks| local to a buffer.
+Marks are useful for jumping back and forth between interesting points in a
+buffer, but can be hard to keep track of without any way to see where you have
+placed them.
+
+ShowMarks hopefully makes life easier by placing a |sign| in the
+leftmost column of the buffer.  The sign indicates the label of the mark and
+its location.
+
+Note: This plugin requires Vim 6.x compiled with the |+signs| feature.
+
+===============================================================================
+1. Contents                                                *ShowMarks-contents*
+
+|ShowMarks-contents|       List of help topics for ShowMarks.
+|ShowMarks-configuration|  How to customize the behaviour of ShowMarks.
+|ShowMarks-mappings|       List of default key mappings.
+|ShowMarks-commands|       Commands for changing the behaviour of ShowMarks.
+
+|marks|                    Help on using marks.
+|sign|                     Help on using signs.
+
+===============================================================================
+2. Configuration                                      *ShowMarks-configuration*
+
+ShowMarks can be configured to suit your needs.
+The following options can be added to your |vimrc| to change how ShowMarks
+behaves:
+
+'showmarks_enable'    boolean (default: 1)                 *'showmarks_enable'*
+   This option enables or disables ShowMarks on startup. Normally ShowMarks
+   will be enabled when Vim starts, setting this to 0 will disable ShowMarks
+   by default.
+   ShowMarks can be turned back on using the |ShowMarksToggle| command.
+
+'showmarks_include'   string (default: "a-zA-Z")          *'showmarks_include'*
+   This option specifies which marks will be shown by ShowMarks.
+   The best way to show how this works is with an example:
+
+     let showmarks_include="a-cmtuA-E"
+
+   This will tell ShowMarks to only show the marks a,b,c,m,t,u,A,B,C,D and E.
+   All other marks will still be there, just invisible.
+
+===============================================================================
+3. Mappings                                                *ShowMarks-mappings*
+
+The following mappings are setup by default:
+
+ <Leader>mt   - Toggles ShowMarks on and off.
+ <Leader>mh   - Hides the mark at the current line.
+ <Leader>ma   - Hides all marks in the current buffer.
+ <Leader>mm   - Places the next available mark on the current line.
+
+(see |<Leader>| for how to setup the mapleader variable.)
+
+===============================================================================
+4. Commands                                                *ShowMarks-commands*
+
+:ShowMarksToggle                                              *ShowMarksToggle*
+This command will toggle the display of marks on or off.
+
+:ShowMarksHideMark                                          *ShowMarksHideMark*
+This command will hide the mark on the current line.
+It doesn't actually remove the mark, it simply moves it to line 1 and hides
+the sign.
+
+:ShowMarksHideAll                                            *ShowMarksHideAll*
+This command will hide all marks in the current buffer.
+It doesn't actually remove the marks, it simply moves them to line 1 and hides
+the signs.
+
+:ShowMarksPlaceMark                                        *ShowMarksPlaceMark*
+This command will place the next available mark on the current line. This
+effectively automates mark placement so you don't have to remember which marks
+are placed or not.
+Hidden marks are considered to be available.
+
+NOTE: Marks A-Z aren't supported by this function.
+
+ vim:tw=78:ft=help

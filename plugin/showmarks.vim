@@ -3,10 +3,16 @@
 " Description: Visually displays the location of marks local to a buffer.
 " Authors:     Anthony Kruize <trandor@labyrinth.net.au>
 "              Michael Geddes <michaelrgeddes@optushome.com.au>
-" Version:     1.3
-" Modified:    20 May 2002
+" Version:     1.4
+" Modified:    22 May 2002
 " License:     Released into the public domain.
-" ChangeLog:   1.3 - Fixed toggling ShowMarks not responding immediately.
+" ChangeLog:   1.4 - Added support for placing the next available mark.
+"                      (Thanks to Shishir Ramam for the idea)
+"                    Added support for hiding all marks.
+"                    Marks on line 1 are no longer shown. This stops hidden
+"                      marks from reappearing when the file is opened again.
+"                    Added a help file.
+"              1.3 - Fixed toggling ShowMarks not responding immediately.
 "                    Added user commands for toggling/hiding marks.
 "                    Added ability to disable ShowMarks by default.
 "              1.2 - Added a check that Vim was compiled with +signs support.
@@ -23,11 +29,13 @@
 "              Default keymappings are:
 "                <Leader>mt  - Toggles ShowMarks on and off.
 "                <Leader>mh  - Hides a mark.
+"                <Leader>ma  - Hides all marks.
+"                <Leader>mm  - Places the next available mark.
 "
 "              Hiding a mark doesn't actually remove it, it simply moves it
 "              to line 1 and hides it visually.
 "
-" Configuration: The following variables can be used to customize the
+" Configuration: The following options can be used to customize the
 "              behavior of ShowMarks.  Simply include them in your vimrc
 "              file with the desired settings.
 "
@@ -65,6 +73,8 @@ endif
 " Commands
 com! -nargs=0 ShowMarksToggle :silent call <sid>ShowMarksToggle()
 com! -nargs=0 ShowMarksHideMark :silent call <sid>ShowMarksHideMark()
+com! -nargs=0 ShowMarksHideAll :silent call <sid>ShowMarksHideAll()
+com! -nargs=0 ShowMarksPlaceMark :silent call <sid>ShowMarksPlaceMark()
 
 " Mappings
 if !hasmapto( '<Plug>ShowmarksShowMarksToggle' )
@@ -73,13 +83,20 @@ endif
 if !hasmapto( '<Plug>ShowmarksHideMark' )
 	map <silent> <unique> <leader>mh <Plug>ShowmarksShowMarksHideMark
 endif
-
+if !hasmapto( '<Plug>ShowmarksHideAll' )
+	map <silent> <unique> <leader>ma <Plug>ShowmarksShowMarksHideAll
+endif
+if !hasmapto( '<Plug>ShowmarksPlaceMark' )
+	map <silent> <unique> <leader>mm <Plug>ShowmarksShowMarksPlaceMark
+endif
 noremap <unique> <script> <Plug>ShowmarksShowMarksToggle :call <sid>ShowMarksToggle()<CR>
 noremap <unique> <script> <Plug>ShowmarksShowMarksHideMark :call <sid>ShowMarksHideMark()<CR>
+noremap <unique> <script> <Plug>ShowmarksShowMarksHideAll :call <sid>ShowMarksHideAll()<CR>
+noremap <unique> <script> <Plug>ShowmarksShowMarksPlaceMark :call <sid>ShowMarksPlaceMark()<CR>
 noremap <unique> <script> \sm m
 noremap <silent> m :exe 'norm \sm'.nr2char(getchar())<bar>call <sid>ShowMarks()<CR>
 
-" AutoCommands:
+" AutoCommands
 aug ShowMarks
 	au!
 	autocmd CursorHold * call s:ShowMarks()
@@ -88,7 +105,8 @@ aug END
 " Highlighting: Setup some nice colours to show the mark position.
 hi default ShowMarksHL ctermfg=blue ctermbg=lightblue cterm=bold guifg=blue guibg=lightblue gui=bold
 
-" Setup the sign definitions for each mark
+" Function: ShowMarksSetup()
+" Description: This function sets up the sign definitions for each mark.
 fun! s:ShowMarksSetup()
 	let n = 0
 	while n < 26
@@ -103,7 +121,8 @@ endf
 " Set things up
 call s:ShowMarksSetup()
 
-" Toggle whether we display marks
+" Function: ShowMarksToggle()
+" Description: This function toggles whether marks are displayed or not.
 fun! s:ShowMarksToggle()
 	if g:showmarks_enable == 0
 		let g:showmarks_enable = 1
@@ -135,8 +154,9 @@ fun! s:ShowMarksToggle()
 	endif
 endf
 
-" This function is called on the CursorHold autocommand.
-" It runs through all the marks and displays or removes signs as appropriate.
+" Function: ShowMarks()
+" Description: This function runs through all the marks and displays or
+" removes signs as appropriate. It is called on the CursorHold autocommand.
 fun! s:ShowMarks()
 	if g:showmarks_enable == 0
 		return
@@ -154,7 +174,7 @@ fun! s:ShowMarks()
 		if c =~ '^['.g:showmarks_include.']$'
 			if ln == 0 && (exists('b:placed_'.c) && b:placed_{c} != ln )
 				exe 'sign unplace '.id.' buffer='.winbufnr(0)
-			elseif ln != 0 && (!exists('b:placed_'.c) || b:placed_{c} != ln )
+			elseif ln > 1 && (!exists('b:placed_'.c) || b:placed_{c} != ln )
 				exe 'sign unplace '.id.' buffer='.winbufnr(0)
 				exe 'sign place '.id.' name=ShowMark'.c.' line='.ln.' buffer='.winbufnr(0)
 			endif
@@ -163,7 +183,7 @@ fun! s:ShowMarks()
 		if C =~ '^['.g:showmarks_include.']$'
 			if LN == 0 && (exists('b:placed_'.C) && b:placed_{C} != LN )
 				exe 'sign unplace '.ID.' buffer='.winbufnr(0)
-			elseif LN != 0 && (!exists('b:placed_'.C) || b:placed_{C} != LN )
+			elseif LN > 1 && (!exists('b:placed_'.C) || b:placed_{C} != LN )
 				exe 'sign unplace '.ID.' buffer='.winbufnr(0)
 				exe 'sign place '.ID.' name=ShowMark'.C.' line='.LN.' buffer='.winbufnr(0)
 			endif
@@ -175,8 +195,9 @@ fun! s:ShowMarks()
 	endw
 endf
 
-" Hide the mark at the current line.
-" This simply moves the mark to line 1 and hides the sign.
+" Function: ShowMarksHideMark()
+" Description: This function hides the mark at the current line.
+" It simply moves the mark to line 1 and hides the sign.
 fun! s:ShowMarksHideMark()
 	let ln = line(".")
 	let n = 0
@@ -196,6 +217,50 @@ fun! s:ShowMarksHideMark()
 			exe 'sign unplace '.ID.' buffer='.winbufnr(0)
 			exe '1 mark '.C
 			let b:placed_{C} = 1
+		endif
+		let n = n + 1
+	endw
+endf
+
+" Function: ShowMarksHideAll()
+" Description: This function hides all marks in the buffer.
+" It simply moves the marks to line 1 and hides the signs.
+fun! s:ShowMarksHideAll()
+	let n = 0
+	while n < 26
+		let c = nr2char(char2nr('a') + n)
+		let id = n + 52 * winbufnr(0)
+		let C = nr2char(char2nr('A') + n)
+		let ID = (n + 52 * winbufnr(0)) + 26
+
+		exe 'sign unplace '.id.' buffer='.winbufnr(0)
+		exe '1 mark '.c
+		let b:placed_{c} = 1
+
+		exe 'sign unplace '.ID.' buffer='.winbufnr(0)
+		exe '1 mark '.C
+		let b:placed_{C} = 1
+
+		let n = n + 1
+	endw
+endf
+
+" Function: ShowMarksPlaceMark()
+" Description: This function will place the next unplaced mark to the current
+" location. The idea here is to automate the placement of marks so the user
+" doesn't have to remember which marks are placed or not.
+" Hidden marks are considered to be unplaced.
+" Marks A-Z aren't supported.
+fun! s:ShowMarksPlaceMark()
+	let n = 0
+	let p = 0
+	while n < 26 && p == 0
+		let c = nr2char(char2nr('a') + n)
+		let ln = line("'".c)
+		if ln <= 1
+			exe 'mark '.c
+			call <sid>ShowMarks()
+			let p = 1
 		endif
 		let n = n + 1
 	endw

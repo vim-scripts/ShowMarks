@@ -1,0 +1,14 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=152
+
+ShowMarks provides a visual representation of the location marks.
+Marks are useful for jumping back and forth between interesting points in a buffer, but can be hard to keep track of without any way to see where you have placed them.  ShowMarks hopefully makes life easier by placing a sign in the leftmost column of the buffer.  The sign indicates the label of the mark and its location.
+It can be toggled on and off and individual marks can be hidden(effectively removing them).
+
+By default the following keymappings are defined:
+   \mt : Toggles ShowMarks on and off.
+   \mh : Hides an individual mark.
+   \ma : Hides all marks in the current buffer.
+   \mm : Places the next available mark.
+
+ShowMarks requires that Vim is compiled with the +signs feature.
+

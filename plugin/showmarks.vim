@@ -3,10 +3,11 @@
 " Description: Visually displays the location of marks local to a buffer.
 " Authors:     Anthony Kruize <trandor@labyrinth.net.au>
 "              Michael Geddes <michaelrgeddes@optushome.com.au>
-" Version:     1.4
-" Modified:    22 May 2002
+" Version:     1.5
+" Modified:    16 July 2002
 " License:     Released into the public domain.
-" ChangeLog:   1.4 - Added support for placing the next available mark.
+" ChangeLog:   1.5 - Added ability to customize how the marks are displayed.
+"              1.4 - Added support for placing the next available mark.
 "                      (Thanks to Shishir Ramam for the idea)
 "                    Added support for hiding all marks.
 "                    Marks on line 1 are no longer shown. This stops hidden
@@ -45,6 +46,14 @@
 "              showmarks_include (Default: "a-zA-Z")
 "                   Defines which marks will be shown.
 "                   Example: let showmarks_include="a-dmtuA-E"
+"              showmarks_textlower (Default: ">")
+"                   Defines how the mark is to be displayed. A single character
+"                   will display as the mark with the character after. Double
+"                   characters will just display those characters.
+"                   Example: let showmarks_textlower=">>"
+"              showmarks_textupper (Default: ">")
+"                   Same as above but for the marks A-Z.
+"                   Example: let showmarks_textupper="**"
 " ==============================================================================
 
 " Check if we should continue loading
@@ -68,6 +77,14 @@ endif
 " Show all marks by default.
 if !exists('g:showmarks_include')
 	let g:showmarks_include = "a-zA-Z"
+endif
+" Format for marks a-z is > by default.
+if !exists('g:showmarks_textlower')
+	let g:showmarks_textlower=">"
+endif
+" Format for marks A-Z is > by default.
+if !exists('g:showmarks_textupper')
+	let g:showmarks_textupper=">"
 endif
 
 " Commands
@@ -107,13 +124,41 @@ hi default ShowMarksHL ctermfg=blue ctermbg=lightblue cterm=bold guifg=blue guib
 
 " Function: ShowMarksSetup()
 " Description: This function sets up the sign definitions for each mark.
+" It uses the showmarks_textlower and showmarks_textupper variables to
+" determine how to draw the mark.
 fun! s:ShowMarksSetup()
 	let n = 0
+
+	" Make sure the textlower option is valid
+	if strlen(g:showmarks_textlower) == 0 || strlen(g:showmarks_textlower) > 2
+		echohl ErrorMsg
+		echo "ShowMarks: textlower must contain 1 or 2 characters."
+		echohl None
+		let g:showmarks_textlower=">"
+	endif
+	" Make sure the textupper option is valid
+	if strlen(g:showmarks_textupper) == 0 || strlen(g:showmarks_textupper) > 2
+		echohl ErrorMsg
+		echo "ShowMarks: textupper must contain 1 or 2 characters."
+		echohl None
+		let g:showmarks_textupper=">"
+	endif
+
 	while n < 26
 		let c = nr2char(char2nr('a') + n)
 		let C = nr2char(char2nr('A') + n)
-		exe 'sign define ShowMark'.c.' text='.c.'> texthl=ShowMarksHL'
-		exe 'sign define ShowMark'.C.' text='.C.'> texthl=ShowMarksHL'
+		if strlen(g:showmarks_textlower) == 1
+			let textl=c.g:showmarks_textlower
+		else
+			let textl=g:showmarks_textlower
+		endif
+		if strlen(g:showmarks_textupper) == 1
+			let textu=C.g:showmarks_textupper
+		else
+			let textu=g:showmarks_textupper
+		endif
+		exe 'sign define ShowMark'.c.' text='.textl.' texthl=ShowMarksHL'
+		exe 'sign define ShowMark'.C.' text='.textu.' texthl=ShowMarksHL'
 		let n = n + 1
 	endw
 endf

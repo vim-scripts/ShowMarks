@@ -48,6 +48,18 @@ behaves:
    This will tell ShowMarks to only show the marks a,b,c,m,t,u,A,B,C,D and E.
    All other marks will still be there, just invisible.
 
+'showmarks_textlower' string  (default: ">")            *'showmarks_textlower'*
+   This option defines how the marks a-z will be displayed.
+   Specifying a single character will cause the mark to be shown with the
+   character appended to the end. The default setting is like this, it says
+   that the mark should be displayed with the '>' character after it.
+   Specifying two characters will simply display those two characters.
+   A maximum of two characters can be defined.
+
+'showmarks_textupper' string  (default: ">")            *'showmarks_textupper'*
+   This option defines how the marks A-Z will be displayed. It behaves the same
+   as the |showmarks_textlower| option.
+
 ===============================================================================
 3. Mappings                                                *ShowMarks-mappings*
 

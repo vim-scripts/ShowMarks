@@ -3,16 +3,20 @@
 " Description: Visually displays the location of marks local to a buffer.
 " Authors:     Anthony Kruize <trandor@labyrinth.net.au>
 "              Michael Geddes <michaelrgeddes@optushome.com.au>
-" Version:     1.2
-" Modified:    28 February 2002
+" Version:     1.3
+" Modified:    20 May 2002
 " License:     Released into the public domain.
-" ChangeLog:   1.2 - Added a check that Vim was compiled with +signs support.
+" ChangeLog:   1.3 - Fixed toggling ShowMarks not responding immediately.
+"                    Added user commands for toggling/hiding marks.
+"                    Added ability to disable ShowMarks by default.
+"              1.2 - Added a check that Vim was compiled with +signs support.
 "                    Added the ability to define which marks are shown.
 "                    Removed debugging code I accidently left in.
 "              1.1 - Added support for the A-Z marks.
 "                    Fixed sign staying placed if the line it was on is deleted.
 "                    Clear autocommands before making new ones.
 "              1.0 - First release.
+"
 " Usage:       Copy this file into the plugins directory so it will be
 "              automatically sourced.
 "
@@ -20,8 +24,19 @@
 "                <Leader>mt  - Toggles ShowMarks on and off.
 "                <Leader>mh  - Hides a mark.
 "
-"              Hiding a mark doesn't actually remove it, it simply moves it to
-"              line 1 and hides it visually.
+"              Hiding a mark doesn't actually remove it, it simply moves it
+"              to line 1 and hides it visually.
+"
+" Configuration: The following variables can be used to customize the
+"              behavior of ShowMarks.  Simply include them in your vimrc
+"              file with the desired settings.
+"
+"              showmarks_enable  (Default: 1)
+"                   Defines whether ShowMarks is enabled by default or not.
+"                   Example: let showmarks_enable=0
+"              showmarks_include (Default: "a-zA-Z")
+"                   Defines which marks will be shown.
+"                   Example: let showmarks_include="a-dmtuA-E"
 " ==============================================================================
 
 " Check if we should continue loading
@@ -30,41 +45,37 @@ if exists( "loaded_showmarks" )
 endif
 let loaded_showmarks = 1
 
-" Bail out if VIM isn't compiled with signs support.
-if has("signs") == 0
+" Bail out if Vim isn't compiled with signs support.
+if has( "signs" ) == 0
 	echohl ErrorMsg
 	echo "ShowMarks requires Vim to have +signs support."
 	echohl None
 	finish
 endif
 
-
-
-" -- CONFIGURATION --
-" Add the following line to your vimrc and change the letters to
-" the marks you want shown.
-" The example will only show marks a,b,c,d,m,t,u, and A,B,C,D,E,
-" Example:
-"    let showmarks_include = "a-dmtuA-E"
-
-" If the 'showmarks_include' variable isn't defined in the users vimrc,
-" then show all marks by default.
+" Enable showmarks by default.
+if !exists('g:showmarks_enable')
+	let g:showmarks_enable = 1
+endif
+" Show all marks by default.
 if !exists('g:showmarks_include')
 	let g:showmarks_include = "a-zA-Z"
 endif
 
-
+" Commands
+com! -nargs=0 ShowMarksToggle :silent call <sid>ShowMarksToggle()
+com! -nargs=0 ShowMarksHideMark :silent call <sid>ShowMarksHideMark()
 
 " Mappings
 if !hasmapto( '<Plug>ShowmarksShowMarksToggle' )
 	map <silent> <unique> <leader>mt <Plug>ShowmarksShowMarksToggle
 endif
 if !hasmapto( '<Plug>ShowmarksHideMark' )
-	map <silent> <unique> <leader>mh <Plug>ShowmarksHideMark
+	map <silent> <unique> <leader>mh <Plug>ShowmarksShowMarksHideMark
 endif
 
-noremap <unique> <script> <Plug>ShowmarksShowMarksToggle :call <SID>ShowMarksToggle()<CR>
-noremap <unique> <script> <Plug>ShowmarksHideMark :call <SID>HideMark()<CR>
+noremap <unique> <script> <Plug>ShowmarksShowMarksToggle :call <sid>ShowMarksToggle()<CR>
+noremap <unique> <script> <Plug>ShowmarksShowMarksHideMark :call <sid>ShowMarksHideMark()<CR>
 noremap <unique> <script> \sm m
 noremap <silent> m :exe 'norm \sm'.nr2char(getchar())<bar>call <sid>ShowMarks()<CR>
 
@@ -94,17 +105,14 @@ call s:ShowMarksSetup()
 
 " Toggle whether we display marks
 fun! s:ShowMarksToggle()
-	if !exists("b:ShowMarks_Enabled")
-		let b:ShowMarks_Enabled = 1
-	endif
-
-	if b:ShowMarks_Enabled == 0
-		let b:ShowMarks_Enabled = 1
+	if g:showmarks_enable == 0
+		let g:showmarks_enable = 1
+		call <sid>ShowMarks()
 		aug ShowMarks
 			autocmd CursorHold * call s:ShowMarks()
 		aug END
 	else
-		let b:ShowMarks_Enabled = 0
+		let g:showmarks_enable = 0
 		let n = 0
 		while n < 26
 			let c = nr2char(char2nr('a') + n)
@@ -130,10 +138,8 @@ endf
 " This function is called on the CursorHold autocommand.
 " It runs through all the marks and displays or removes signs as appropriate.
 fun! s:ShowMarks()
-	if exists("b:ShowMarks_Enabled")
-		if b:ShowMarks_Enabled == 0
-			return
-		endif
+	if g:showmarks_enable == 0
+		return
 	endif
 
 	let n = 0
@@ -171,7 +177,7 @@ endf
 
 " Hide the mark at the current line.
 " This simply moves the mark to line 1 and hides the sign.
-fun! s:HideMark()
+fun! s:ShowMarksHideMark()
 	let ln = line(".")
 	let n = 0
 	while n < 26

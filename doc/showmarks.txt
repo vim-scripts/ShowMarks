@@ -1,4 +1,4 @@
-*ShowMarks.txt* Plugin for visually showing the location of marks
+*showmarks.txt* Plugin for visually showing the location of marks
 
                By Anthony Kruize <trandor@labyrinth.net.au>
                   Michael Geddes <michaelrgeddes@optushome.com.au>
@@ -13,87 +13,179 @@ ShowMarks hopefully makes life easier by placing a |sign| in the
 leftmost column of the buffer.  The sign indicates the label of the mark and
 its location.
 
+ShowMarks is activated by the |CursorHold| |autocommand| which is triggered
+every |updatetime| milliseconds.  This is set to 4000(4 seconds) by default.
+If this is too slow, setting it to a lower value will make it more responsive.
+
 Note: This plugin requires Vim 6.x compiled with the |+signs| feature.
 
 ===============================================================================
-1. Contents                                                *ShowMarks-contents*
+1. Contents                                    *showmarks* *showmarks-contents*
 
-|ShowMarks-contents|       List of help topics for ShowMarks.
-|ShowMarks-configuration|  How to customize the behaviour of ShowMarks.
-|ShowMarks-mappings|       List of default key mappings.
-|ShowMarks-commands|       Commands for changing the behaviour of ShowMarks.
+    1. Contents	             |showmarks-contents|
+    2. Configuration         |showmarks-configuration|
+    3. Highlighting          |showmarks-highlighting|
+    4. Key mappings          |showmarks-mappings|
+    5. Commands              |showmarks-commands|
 
-|marks|                    Help on using marks.
-|sign|                     Help on using signs.
+    Appendix
+    A. Using marks           |marks|
+    B. Using signs           |sign|
+    C. Defining updatetime   |updatetime|
+    D. Defining a mapleader  |mapleader|
+    E. Defining highlighting |highlight|
 
 ===============================================================================
-2. Configuration                                      *ShowMarks-configuration*
+2. Configuration                                      *showmarks-configuration*
 
 ShowMarks can be configured to suit your needs.
 The following options can be added to your |vimrc| to change how ShowMarks
 behaves:
 
-'showmarks_enable'    boolean (default: 1)                 *'showmarks_enable'*
+                                                           *'showmarks_enable'*
+'showmarks_enable'      boolean (default: 1)
+                        global
    This option enables or disables ShowMarks on startup. Normally ShowMarks
    will be enabled when Vim starts, setting this to 0 will disable ShowMarks
    by default.
    ShowMarks can be turned back on using the |ShowMarksToggle| command.
 
-'showmarks_include'   string (default: "a-zA-Z")          *'showmarks_include'*
+                                                          *'showmarks_include'*
+'showmarks_include'     string  (default: "a-zA-Z")
+                        global
    This option specifies which marks will be shown by ShowMarks.
-   The best way to show how this works is with an example:
-
-     let showmarks_include="a-cmtuA-E"
-
+   The best way to show how this works is with some examples:
+>
+     let g:showmarks_include="a-cmtuA-E"
+<
    This will tell ShowMarks to only show the marks a,b,c,m,t,u,A,B,C,D and E.
    All other marks will still be there, just invisible.
 
-'showmarks_textlower' string  (default: ">")            *'showmarks_textlower'*
-   This option defines how the marks a-z will be displayed.
-   Specifying a single character will cause the mark to be shown with the
-   character appended to the end. The default setting is like this, it says
-   that the mark should be displayed with the '>' character after it.
-   Specifying two characters will simply display those two characters.
-   A maximum of two characters can be defined.
+   To show all marks:
+>
+    let g:showmarks_include="][a-zA-Z0-9\"^'`<>(){}.")
+<
+   NOTE: When including the ] mark, it must be first in the list.
+         When including the " mark, it must be escaped with a \.
 
-'showmarks_textupper' string  (default: ">")            *'showmarks_textupper'*
+   The list of available marks is: >
+
+     a-z A-Z 0-9 " ^ ' ` . < > ( ) { } [ ]
+<
+                                                      *'showmarks_ignore_type'*
+'showmarks_ignore_type' string  (default: "hq")
+                        global
+   This option defines which types of buffers should be ignored.
+   Each type is represented by a letter. This option is not case-sensitive.
+   Valid buffer types are:
+   - h : Help
+   - m : Non-modifiable
+   - p : Preview
+   - q : Quickfix
+   - r : Readonly
+
+   For example to ignore help, preview and readonly files:
+>
+     let g:showmarks_ignore_type="hpr"
+<
+                                                      *'showmarks_ignore_name'*
+'showmarks_ignore_name' string  (default: "")
+                        global
+   This option defines specific names of buffers to be ignored.
+   Names should be separated by a space. This option is case-sensitive.
+
+   For example to ignore the TagList window:
+>
+     let g:showmarks_ignore_name="__Tag_List__"
+<
+                                                        *'showmarks_textlower'*
+'showmarks_textlower'   string  (default: ">" )
+                        global
+   This option defines how the marks a-z will be displayed.
+   A maximum of two characters can be defined.
+   To include the mark in the text use a tab(\t) character. A single
+   character will display as the mark with the character suffixed (same as
+   "\t<character>"). Specifying two characters will simply display those two
+   characters.
+
+   Some examples:
+     To display the mark with a > suffixed: >
+       let g:showmarks_textlower="\t>"
+<         or >
+       let g:showmarks_textlower=">"
+<
+     To display the mark with a ( prefixed: >
+       let g:showmarks_textlower="(\t"
+<
+     To display two > characters: >
+       let g:showmarks_textlower=">>"
+<
+                                                        *'showmarks_textupper'*
+'showmarks_textupper'   string  (default: ">")
+                        global
    This option defines how the marks A-Z will be displayed. It behaves the same
-   as the |showmarks_textlower| option.
+   as the |'showmarks_textlower'| option.
+
+                                                        *'showmarks_textother'*
+'showmarks_textother'   string  (default: ">")
+                        global
+   This option defines how all other marks will be displayed. It behaves the
+   same as the |'showmarks_textlower'| option.
 
 ===============================================================================
-3. Mappings                                                *ShowMarks-mappings*
+3. Highlighting                                        *showmarks-highlighting*
+
+Three highlighting groups are used by ShowMarks to define the colours used to
+highlight each of the marks.
+
+  - ShowMarksHL  : This group is used to highlight all the lowercase marks.
+  - ShowMarksHLu : This group is used to highlight all the uppercase marks.
+  - ShowMarksHLo : This group is used to highlight all other marks.
+
+You can define you own highlighting by overriding these groups in your |vimrc|.
+For example: >
+
+  highlight ShowMarksHL guifg=red guibg=green
+<
+Will set all lowercase marks to be red on green when running in GVim.
+See |highlight| for more information.
+
+===============================================================================
+4. Mappings                                                *showmarks-mappings*
 
 The following mappings are setup by default:
 
- <Leader>mt   - Toggles ShowMarks on and off.
- <Leader>mh   - Hides the mark at the current line.
- <Leader>ma   - Hides all marks in the current buffer.
- <Leader>mm   - Places the next available mark on the current line.
+  <Leader>mt   - Toggles ShowMarks on and off.
+  <Leader>mh   - Clears the mark at the current line.
+  <Leader>ma   - Clears all marks in the current buffer.
+  <Leader>mm   - Places the next available mark on the current line.
 
-(see |<Leader>| for how to setup the mapleader variable.)
+(see |mapleader| for how to setup the mapleader variable.)
 
 ===============================================================================
-4. Commands                                                *ShowMarks-commands*
+5. Commands                                                *showmarks-commands*
 
-:ShowMarksToggle                                              *ShowMarksToggle*
-This command will toggle the display of marks on or off.
+                                                              *ShowMarksToggle*
+:ShowMarksToggle
+   This command will toggle the display of marks on or off.
 
-:ShowMarksHideMark                                          *ShowMarksHideMark*
-This command will hide the mark on the current line.
-It doesn't actually remove the mark, it simply moves it to line 1 and hides
-the sign.
+                                                           *ShowMarksClearMark*
+:ShowMarksClearMark
+   This command will clear the mark on the current line.
+   It doesn't actually remove the mark, it simply moves it to line 1 and
+   removes the sign.
 
-:ShowMarksHideAll                                            *ShowMarksHideAll*
-This command will hide all marks in the current buffer.
-It doesn't actually remove the marks, it simply moves them to line 1 and hides
-the signs.
+                                                            *ShowMarksClearAll*
+:ShowMarksClearAll
+   This command will clear all marks in the current buffer.
+   It doesn't actually remove the marks, it simply moves them to line 1 and
+   removes the signs.
 
-:ShowMarksPlaceMark                                        *ShowMarksPlaceMark*
-This command will place the next available mark on the current line. This
-effectively automates mark placement so you don't have to remember which marks
-are placed or not.
-Hidden marks are considered to be available.
+                                                           *ShowMarksPlaceMark*
+:ShowMarksPlaceMark
+   This command will place the next available mark on the current line. This
+   effectively automates mark placement so you don't have to remember which
+   marks are placed or not. Hidden marks are considered to be available.
+   NOTE: Only marks a-z are supported by this function.
 
-NOTE: Marks A-Z aren't supported by this function.
-
- vim:tw=78:ft=help
+vim:tw=78:ts=4:ft=help

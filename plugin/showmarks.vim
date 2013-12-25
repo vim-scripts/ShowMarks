@@ -514,7 +514,7 @@ if !isdirectory(docdir)
   unlet docdir
   finish
  elseif !has("mac")
-  exe "!mkdir ".docdir
+  exe '!mkdir "'.docdir.'"'
  endif
 endif
 

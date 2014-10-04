@@ -372,7 +372,7 @@ fun! s:ShowMarks()
 					exe 'hi link '.s:ShowMarksDLink{nm}.nm.' '.b:ShowMarksLink{nm}
 				endif
 				let mark_at{ln} = nm
-				if !exists('b:placed_'.nm) || b:placed_{nm} != ln
+				if ln > 0 && (!exists('b:placed_'.nm) || b:placed_{nm} != ln)
 					exe 'sign unplace '.id.' buffer='.winbufnr(0)
 					exe 'sign place '.id.' name=ShowMark'.nm.' line='.ln.' buffer='.winbufnr(0)
 					let b:placed_{nm} = ln

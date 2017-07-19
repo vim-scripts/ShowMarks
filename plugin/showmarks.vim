@@ -374,7 +374,9 @@ fun! s:ShowMarks()
 				let mark_at{ln} = nm
 				if !exists('b:placed_'.nm) || b:placed_{nm} != ln
 					exe 'sign unplace '.id.' buffer='.winbufnr(0)
-					exe 'sign place '.id.' name=ShowMark'.nm.' line='.ln.' buffer='.winbufnr(0)
+					if ln > 0 " conditional which tests for the line number as greater than 0 "
+						exe 'sign place '.id.' name=ShowMark'.nm.' line='.ln.' buffer='.winbufnr(0)
+					endif     " end conditional "
 					let b:placed_{nm} = ln
 				endif
 			endif
